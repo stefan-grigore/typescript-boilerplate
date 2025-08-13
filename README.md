@@ -14,20 +14,6 @@ npm run dev          # http://localhost:3000
 # Docs: http://localhost:3000/docs
 ```
 
-## Env (optional)
-```
-PORT=3000
-JWT_ISSUER=http://localhost
-JWT_AUDIENCE=https://your.api
-JWT_SECRET=dev-secret-change-me
-ACCESS_TOKEN_TTL=3600
-CLIENT_ID=my-client
-CLIENT_SECRET=supersecret
-DEFAULT_SCOPE=read:users
-OAUTH2_AUTH_URL=https://example/authorize
-OAUTH2_TOKEN_URL=https://example/token
-```
-
 ## BDD
 - Features: `features/*.feature`
 - Steps: `features/steps/**/*.ts`

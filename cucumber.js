@@ -5,7 +5,7 @@ module.exports = {
     publishQuiet: true,
     format: [
       'progress',
-      'json:reports/cucumber.json'   // <-- JSON output for the reporter
+      'json:reports/cucumber.json'
     ],
     paths: ['features/**/*.feature'],
     parallel: 0
