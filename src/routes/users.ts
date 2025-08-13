@@ -1,7 +1,7 @@
 import type { FastifyInstance } from 'fastify';
 import { z } from 'zod';
 import { UserSchema, CreateUserSchema } from '../models/User';
-import { ErrorResponseSchema } from '../models/Error';
+import { ApiError, ErrorResponseSchema } from '../models/ApiError';
 import { UserService } from '../services/UserService';
 
 export async function registerUserRoutes(app: FastifyInstance, requireAuth: (req: any, reply: any) => Promise<any>) {
@@ -40,7 +40,7 @@ export async function registerUserRoutes(app: FastifyInstance, requireAuth: (req
       const { id } = req.params as { id: string };
       const u = UserService.get(id);
       if (!u) {
-        return reply.code(404).send({ error: 'not_found', error_description: 'User not found' });
+        return reply.code(404).send(ApiError.notFound('User not found'));
       }
       return u;
     },

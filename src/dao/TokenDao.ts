@@ -18,11 +18,7 @@ export const TokenDao = {
         byToken.delete(rec.token);
       }
     }
-  },
-  clear() {
-    byJti.clear();
-    byToken.clear();
-  },
+  }
 };
 
 export {};

@@ -29,3 +29,17 @@ Feature: OAuth token endpoint (client credentials)
         | grant_type | client_credentials |
     Then the response status should be 400
     And the response json should have "error" = "invalid_request"
+
+  Scenario: Access with an expired token is rejected
+    When I obtain an access token
+    And I fast-forward token storage by 999999 seconds
+    And I GET "/users" with saved bearer
+    Then the response status should be 401
+    And the response json should have "error" = "invalid_token"
+
+  Scenario: Token with mismatched JTI is rejected
+    When I obtain an access token
+    And I corrupt the stored JTI for the saved bearer
+    And I GET "/users" with saved bearer
+    Then the response status should be 401
+    And the response json should have "error" = "invalid_token"

@@ -8,6 +8,7 @@ import { config } from './config';
 import { verifyBearer } from './services/AccessControlService';
 import { registerOAuthRoutes } from './routes/oauth';
 import { registerUserRoutes } from './routes/users';
+import { ApiError } from './models/ApiError';
 
 export async function buildApp() {
   const app = Fastify({ logger: true }).withTypeProvider<ZodTypeProvider>();
@@ -57,42 +58,21 @@ export async function buildApp() {
   });
 
   app.setErrorHandler((err, _req, reply) => {
-    if (err?.validation) {
-      return reply.status(400).send({
-        error: 'invalid_request',
-        error_description: (err as any).message,
-      });
-    }
-
-    const status = (err as any).statusCode ?? 500;
-    const body =
-      status === 401
-        ? { error: 'invalid_token', error_description: 'Unauthorized' }
-        : status === 404
-        ? { error: 'not_found', error_description: 'Not found' }
-        : { error: 'server_error', error_description: 'Internal server error' };
-
-    return reply.status(status).send(body);
+    return reply.status(500).send(ApiError.serverError());
   });
 
   // Auth gate (uses AccessControlService.verifyBearer)
   const requireAuth = async (req: any, reply: any) => {
     const auth = req.headers.authorization;
     if (!auth?.startsWith('Bearer ')) {
-      return reply.code(401).send({
-        error: 'invalid_request',
-        error_description: 'Missing or invalid Authorization header',
-      });
+      return reply.code(401).send(ApiError.invalidRequest('Missing or invalid Authorization header'));
     }
     const token = auth.slice('Bearer '.length);
     try {
       const payload = await verifyBearer(token);
       (req as any).user = payload;
     } catch {
-      return reply.code(401).send({
-        error: 'invalid_token',
-        error_description: 'Invalid or expired token',
-      });
+      return reply.code(401).send(ApiError.invalidToken('Invalid or expired token'));
     }
   };
 
