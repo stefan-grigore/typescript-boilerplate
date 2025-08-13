@@ -38,9 +38,9 @@ const User = z.object({
 type TUser = z.infer<typeof User>;
 
 const TokenRequest = z.object({
-  grant_type: z.literal('client_credentials'),
-  client_id: z.string(),
-  client_secret: z.string(),
+  grant_type: z.string(),
+  client_id: z.string().optional(),
+  client_secret: z.string().optional(),
   scope: z.string().optional().describe('Space-delimited scopes'),
 });
 
@@ -96,9 +96,9 @@ async function verifyBearer(token: string) {
 }
 
 /**
- * App bootstrap
+ * Build the Fastify app (exported for BDD tests)
  */
-async function main() {
+export async function buildApp() {
   const app = Fastify({ logger: true }).withTypeProvider<ZodTypeProvider>();
 
   // Plugins
@@ -152,7 +152,7 @@ async function main() {
     if (err?.validation) {
       return reply
         .status(400)
-        .send({ error: 'invalid_request', error_description: err.message });
+        .send({ error: 'invalid_request', error_description: (err as any).message });
     }
 
     const status = (err as any).statusCode ?? 500;
@@ -173,21 +173,20 @@ async function main() {
   const requireAuth = async (req: any, reply: any) => {
     const auth = req.headers.authorization;
     if (!auth?.startsWith('Bearer ')) {
-      return reply
-        .code(401)
-        .send({
-          error: 'invalid_request',
-          error_description: 'Missing or invalid Authorization header',
-        });
+      return reply.code(401).send({
+        error: 'invalid_request',
+        error_description: 'Missing or invalid Authorization header',
+      });
     }
     const token = auth.slice('Bearer '.length);
     try {
       const payload = await verifyBearer(token);
       (req as any).user = payload; // expose to handlers
     } catch {
-      return reply
-        .code(401)
-        .send({ error: 'invalid_token', error_description: 'Invalid or expired token' });
+      return reply.code(401).send({
+        error: 'invalid_token',
+        error_description: 'Invalid or expired token',
+      });
     }
   };
 
@@ -216,19 +215,26 @@ async function main() {
       >;
 
       if (grant_type !== 'client_credentials') {
-        return reply
-          .code(400)
-          .send({
-            error: 'unsupported_grant_type',
-            error_description: 'Only client_credentials is supported',
-          });
+        return reply.code(400).send({
+          error: 'unsupported_grant_type',
+          error_description: 'Only client_credentials is supported',
+        });
+      }
+
+      // now enforce credentials for client_credentials
+      if (!client_id || !client_secret) {
+        return reply.code(400).send({
+          error: 'invalid_request',
+          error_description: 'client_id and client_secret are required for client_credentials',
+        });
       }
 
       if (!validateClient(client_id, client_secret)) {
         reply.header('WWW-Authenticate', 'Basic realm="oauth", error="invalid_client"');
-        return reply
-          .code(401)
-          .send({ error: 'invalid_client', error_description: 'Client authentication failed' });
+        return reply.code(401).send({
+          error: 'invalid_client',
+          error_description: 'Client authentication failed',
+        });
       }
 
       const requestedScope = scope || DEFAULT_SCOPE;
@@ -283,7 +289,11 @@ async function main() {
     handler: async (req, reply) => {
       const { id } = req.params as { id: string };
       const u = usersDb[id];
-      if (!u) return reply.code(404).send({ error: 'not_found', error_description: 'User not found' });
+      if (!u)
+        return reply.code(404).send({
+          error: 'not_found',
+          error_description: 'User not found',
+        });
       return u;
     },
   });
@@ -300,7 +310,7 @@ async function main() {
       body: CreateUser,
       response: {
         200: User,
-        400: ErrorResponse, // in case you throw custom 400s; validation 400s are coerced globally
+        400: ErrorResponse, // custom 400s; validation 400s are coerced globally
         401: ErrorResponse,
       },
       summary: 'Create user',
@@ -314,12 +324,22 @@ async function main() {
     },
   });
 
-  // Start
+  return app;
+}
+
+/**
+ * Start server if run directly
+ */
+async function main() {
+  const app = await buildApp();
   await app.listen({ port: PORT, host: '0.0.0.0' });
   app.log.info(`🚀 up at http://localhost:${PORT}  |  docs → /docs`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Only run when executed directly (not when imported by tests)
+if (require.main === module) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
