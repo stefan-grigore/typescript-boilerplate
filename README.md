@@ -28,3 +28,18 @@ One-shot:
 npm run coverage:view
 ```
 (Collect JSON + text → render HTML + lcov → open `coverage/index.html`)
+
+## Docker
+
+### build
+docker build -t ts-boilerplate .
+
+### run (override envs as needed)
+docker run -d --rm -p 3000:3000 \
+  -e JWT_SECRET=please-change-me \
+  -e CLIENT_ID=my-client \
+  -e CLIENT_SECRET=supersecret \
+  --name tsb ts-boilerplate
+
+### stop
+docker stop tsb
