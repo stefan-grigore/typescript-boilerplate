@@ -23,7 +23,6 @@ npm run bdd
 ```
 
 ## Coverage (HTML; only src/**)
-One-shot:
 ```bash
 npm run coverage:view
 ```
@@ -34,12 +33,16 @@ npm run coverage:view
 ### build
 docker build -t ts-boilerplate .
 
-### run (override envs as needed)
+### run
+```bash
 docker run -d --rm -p 3000:3000 \
   -e JWT_SECRET=please-change-me \
   -e CLIENT_ID=my-client \
   -e CLIENT_SECRET=supersecret \
   --name tsb ts-boilerplate
+```
 
 ### stop
+```bash
 docker stop tsb
+```
