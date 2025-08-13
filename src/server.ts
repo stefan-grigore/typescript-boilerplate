@@ -24,7 +24,7 @@ export async function buildApp() {
   await app.register(swagger, {
     openapi: {
       info: {
-        title: 'Users Service',
+        title: 'Typescript boilerplate',
         description: 'Fastify + Zod + Swagger + OAuth2 (client_credentials)',
         version: '1.0.0',
       },
