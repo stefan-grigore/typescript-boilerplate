@@ -1,0 +1,298 @@
+openapi: 3.0.3
+info:
+  title: Typescript boilerplate
+  description: Fastify + Zod + Swagger + OAuth2 (client_credentials)
+  version: 1.0.0
+components:
+  securitySchemes:
+    bearer:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+    oauth2:
+      type: oauth2
+      flows:
+        authorizationCode:
+          authorizationUrl: https://example/authorize
+          tokenUrl: https://example/token
+          scopes:
+            read:users: Read users
+            write:users: Write users
+  schemas: {}
+paths:
+  /oauth/tokens:
+    post:
+      summary: Token endpoint (Client Credentials)
+      tags:
+        - oauth
+      description: Exchanges client_id/client_secret for a bearer access token using
+        the client_credentials grant.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                grant_type:
+                  type: string
+                client_id:
+                  type: string
+                client_secret:
+                  type: string
+                scope:
+                  description: Space-delimited scopes
+                  type: string
+              required:
+                - grant_type
+        required: true
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  access_token:
+                    type: string
+                  token_type:
+                    type: string
+                    enum:
+                      - Bearer
+                  expires_in:
+                    type: number
+                  scope:
+                    type: string
+                required:
+                  - access_token
+                  - token_type
+                  - expires_in
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+                additionalProperties: false
+  /users:
+    get:
+      summary: List users
+      tags:
+        - users
+      security:
+        - bearer: []
+        - oauth2:
+            - read:users
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      description: User id
+                      type: string
+                    email:
+                      description: Email
+                      type: string
+                      format: email
+                      pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                    name:
+                      description: Full name
+                      type: string
+                      minLength: 2
+                  required:
+                    - id
+                    - email
+                    - name
+                  additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+                additionalProperties: false
+    post:
+      summary: Create user
+      tags:
+        - users
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  description: Email
+                  type: string
+                  format: email
+                  pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                name:
+                  description: Full name
+                  type: string
+                  minLength: 2
+              required:
+                - email
+                - name
+        required: true
+      security:
+        - bearer: []
+        - oauth2:
+            - write:users
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    description: User id
+                    type: string
+                  email:
+                    description: Email
+                    type: string
+                    format: email
+                    pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                  name:
+                    description: Full name
+                    type: string
+                    minLength: 2
+                required:
+                  - id
+                  - email
+                  - name
+                additionalProperties: false
+        "400":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+                additionalProperties: false
+  /users/{id}:
+    get:
+      summary: Get one user
+      tags:
+        - users
+      parameters:
+        - schema:
+            type: string
+          in: path
+          name: id
+          required: true
+      security:
+        - bearer: []
+        - oauth2:
+            - read:users
+      responses:
+        "200":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    description: User id
+                    type: string
+                  email:
+                    description: Email
+                    type: string
+                    format: email
+                    pattern: ^(?!\.)(?!.*\.\.)([A-Za-z0-9_'+\-\.]*)[A-Za-z0-9_+-]@([A-Za-z0-9][A-Za-z0-9\-]*\.)+[A-Za-z]{2,}$
+                  name:
+                    description: Full name
+                    type: string
+                    minLength: 2
+                required:
+                  - id
+                  - email
+                  - name
+                additionalProperties: false
+        "401":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+                additionalProperties: false
+        "404":
+          description: Default Response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                  error_description:
+                    type: string
+                required:
+                  - error
+                additionalProperties: false
+servers:
+  - url: http://localhost:3000
