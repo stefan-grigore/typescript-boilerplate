@@ -27,7 +27,7 @@ export async function buildApp() {
       info: {
         title: 'Typescript boilerplate',
         description: 'Fastify + Zod + Swagger + OAuth2 (client_credentials)',
-        version: '1.0.0',
+        version: config.API_VERSION,
       },
       servers: [{ url: `http://localhost:${config.PORT}` }],
       components: {
@@ -60,6 +60,13 @@ export async function buildApp() {
   app.setErrorHandler((err, _req, reply) => {
     return reply.status(500).send(ApiError.serverError());
   });
+
+    // Add x-api-version header to all responses
+    app.addHook('onSend', async (_req, reply, payload) => {
+    reply.header('x-api-version', config.API_VERSION);
+    return payload;
+  });
+
 
   // Auth gate (uses AccessControlService.verifyBearer)
   const requireAuth = async (req: any, reply: any) => {

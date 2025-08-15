@@ -9,4 +9,5 @@ export const config = {
   JWT_SECRET: process.env.JWT_SECRET ?? 'dev-secret-change-me',
   OAUTH2_AUTH_URL: process.env.OAUTH2_AUTH_URL ?? 'https://example/authorize',
   OAUTH2_TOKEN_URL: process.env.OAUTH2_TOKEN_URL ?? 'https://example/token',
+  API_VERSION: process.env.API_VERSION ?? '1.0.0',
 };
