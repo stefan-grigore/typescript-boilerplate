@@ -10,12 +10,20 @@ import { registerOAuthRoutes } from './routes/oauth';
 import { registerUserRoutes } from './routes/users';
 import { ApiError } from './models/ApiError';
 
+const API_VERSION = '1.0.0';
+
 export async function buildApp() {
   const app = Fastify({ logger: true }).withTypeProvider<ZodTypeProvider>();
 
   // Plugins
   await app.register(cors, { origin: true });
   await app.register(formbody);
+
+  // Global response headers
+  app.addHook('onSend', async (_req, reply, payload) => {
+    reply.header('x-api-version', API_VERSION);
+    return payload;
+  });
 
   // Zod <-> Fastify
   app.setValidatorCompiler(validatorCompiler);
@@ -27,7 +35,7 @@ export async function buildApp() {
       info: {
         title: 'Typescript boilerplate',
         description: 'Fastify + Zod + Swagger + OAuth2 (client_credentials)',
-        version: '1.0.0',
+        version: API_VERSION,
       },
       servers: [{ url: `http://localhost:${config.PORT}` }],
       components: {
@@ -49,7 +57,19 @@ export async function buildApp() {
         },
       },
     },
-    transform: jsonSchemaTransform,
+    transform: (opts: any) => {
+      const result: any = jsonSchemaTransform(opts);
+      if (result?.schema?.response) {
+        for (const status of Object.keys(result.schema.response)) {
+          const res = result.schema.response[status] as any;
+          res.headers = {
+            ...(res.headers || {}),
+            'x-api-version': { type: 'string', description: 'API version', example: API_VERSION },
+          };
+        }
+      }
+      return result;
+    },
   });
 
   await app.register(swaggerUi, {
