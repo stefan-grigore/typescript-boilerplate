@@ -6,6 +6,8 @@ import type { OAuthStoredToken } from '../models/OAuthToken';
 
 const secretKey = new TextEncoder().encode(config.JWT_SECRET);
 
+export type AccessTokenPayload = JWTPayload & { scope?: string };
+
 export async function issueAccessToken(subject: string, scope?: string): Promise<{
   token: string;
   expiresIn: number;
@@ -31,7 +33,7 @@ export async function issueAccessToken(subject: string, scope?: string): Promise
   return { token, expiresIn: config.ACCESS_TOKEN_TTL };
 }
 
-export async function verifyBearer(token: string): Promise<JWTPayload> {
+export async function verifyBearer(token: string): Promise<AccessTokenPayload> {
   TokenDao.pruneExpired();
   const rec = TokenDao.getByToken(token);
   if (!rec) {
@@ -55,7 +57,7 @@ export async function verifyBearer(token: string): Promise<JWTPayload> {
     throw e;
   }
 
-  return payload;
+  return payload as AccessTokenPayload;
 }
 
 export function validateClient(id?: string, secret?: string): boolean {

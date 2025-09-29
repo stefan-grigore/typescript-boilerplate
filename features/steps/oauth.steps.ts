@@ -4,6 +4,27 @@ import { strict as assert } from 'assert';
 import { TestWorld } from './world';
 import { TokenDao } from '../../src/dao/TokenDao';
 
+async function obtainClientToken(world: TestWorld, scope = 'user') {
+  const params = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: 'my-client',
+    client_secret: 'supersecret',
+  });
+  if (scope !== undefined) {
+    params.set('scope', scope);
+  }
+
+  await world.inject({
+    method: 'POST',
+    url: '/oauth/tokens',
+    headers: { 'content-type': 'application/x-www-form-urlencoded' },
+    payload: params.toString(),
+  });
+  const body = world.res.json();
+  world.token = body.access_token;
+  assert.ok(world.token, 'Expected access_token from token endpoint');
+}
+
 When('I POST form to {string} with:', async function (
   this: TestWorld,
   path: string,
@@ -41,16 +62,11 @@ Then(
 );
 
 When('I obtain an access token', async function (this: TestWorld) {
-  await this.inject({
-    method: 'POST',
-    url: '/oauth/tokens',
-    headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    payload:
-      'grant_type=client_credentials&client_id=my-client&client_secret=supersecret&scope=read:users',
-  });
-  const body = this.res.json();
-  this.token = body.access_token;
-  assert.ok(this.token, 'Expected access_token from token endpoint');
+  await obtainClientToken(this, 'user');
+});
+
+When('I obtain an access token with scope {string}', async function (this: TestWorld, scope: string) {
+  await obtainClientToken(this, scope);
 });
 
 When('I fast-forward token storage by {int} seconds', function (this: TestWorld, secs: number) {

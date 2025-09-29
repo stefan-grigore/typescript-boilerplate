@@ -18,6 +18,7 @@ export class ApiError implements ErrorResponse {
   static invalidRequest(msg: string)                { return new ApiError('invalid_request', msg); }
   static invalidClient(msg: string)                 { return new ApiError('invalid_client', msg); }
   static invalidToken(msg: string)                  { return new ApiError('invalid_token', msg); }
+  static insufficientScope(msg: string)            { return new ApiError('insufficient_scope', msg); }
   static unsupportedGrantType(msg: string)          { return new ApiError('unsupported_grant_type', msg); }
   static notFound(msg: string)                      { return new ApiError('not_found', msg); }
   static serverError(msg = 'Internal server error') { return new ApiError('server_error', msg); }

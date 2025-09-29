@@ -48,6 +48,7 @@ export async function buildApp() {
                 authorizationUrl: config.OAUTH2_AUTH_URL,
                 tokenUrl: config.OAUTH2_TOKEN_URL,
                 scopes: {
+                  user: 'Access user resources',
                   'read:users': 'Read users',
                   'write:users': 'Write users',
                 },
@@ -82,19 +83,29 @@ export async function buildApp() {
   });
 
   // Auth gate (uses AccessControlService.verifyBearer)
-  const requireAuth = async (req: any, reply: any) => {
-    const auth = req.headers.authorization;
-    if (!auth?.startsWith('Bearer ')) {
-      return reply.code(401).send(ApiError.invalidRequest('Missing or invalid Authorization header'));
-    }
-    const token = auth.slice('Bearer '.length);
-    try {
-      const payload = await verifyBearer(token);
-      (req as any).user = payload;
-    } catch {
-      return reply.code(401).send(ApiError.invalidToken('Invalid or expired token'));
-    }
-  };
+  const requireAuth = (requiredScope?: string) =>
+    async (req: any, reply: any) => {
+      const auth = req.headers.authorization;
+      if (!auth?.startsWith('Bearer ')) {
+        return reply.code(401).send(ApiError.invalidRequest('Missing or invalid Authorization header'));
+      }
+      const token = auth.slice('Bearer '.length);
+      try {
+        const payload = await verifyBearer(token);
+
+        if (requiredScope) {
+          const scopeString = payload.scope ?? '';
+          const scopes = scopeString.split(' ').map((s) => s.trim()).filter(Boolean);
+          if (!scopes.includes(requiredScope)) {
+            return reply.code(403).send(ApiError.insufficientScope(`Missing scope: ${requiredScope}`));
+          }
+        }
+
+        (req as any).user = payload;
+      } catch {
+        return reply.code(401).send(ApiError.invalidToken('Invalid or expired token'));
+      }
+    };
 
   // Routes
   await registerOAuthRoutes(app);

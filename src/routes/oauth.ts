@@ -22,7 +22,7 @@ export async function registerOAuthRoutes(app: FastifyInstance) {
       },
     },
     handler: async (req, reply) => {
-      const { grant_type, client_id, client_secret} = req.body as z.infer<
+      const { grant_type, client_id, client_secret, scope } = req.body as z.infer<
         typeof TokenRequestSchema
       >;
 
@@ -39,13 +39,14 @@ export async function registerOAuthRoutes(app: FastifyInstance) {
         return reply.code(401).send(ApiError.invalidClient('Client authentication failed'));
       }
 
-      const { token, expiresIn } = await issueAccessToken(client_id, config.CLIENT_SCOPE);
+      const requestedScope = scope ?? config.CLIENT_SCOPE;
+      const { token, expiresIn } = await issueAccessToken(client_id, requestedScope);
 
       return reply.send({
         access_token: token,
         token_type: 'Bearer',
         expires_in: expiresIn,
-        scope: config.CLIENT_SCOPE
+        scope: requestedScope,
       });
     },
   });

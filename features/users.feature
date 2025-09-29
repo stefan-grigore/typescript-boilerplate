@@ -11,6 +11,12 @@ Feature: Users API
     Then the response status should be 200
     And the response json should be an array
 
+  Scenario: Token without user scope cannot list users
+    Given I have an access token with scope "read:users"
+    When I GET "/users"
+    Then the response status should be 403
+    And the response json should have "error" = "insufficient_scope"
+
   Scenario: Get a user that doesn't exist
     Given I have a valid access token
     When I GET "/users/does-not-exist"
@@ -38,6 +44,15 @@ Feature: Users API
     Then the response status should be 200
     And the response json should have a string at "id"
     And the response json should have "email" = "new@user.com"
+
+  Scenario: Token without user scope cannot create user
+    Given I have an access token with scope "read:users"
+    When I POST json to "/users" with:
+      """
+      { "email": "denied@user.com", "name": "Denied User" }
+      """
+    Then the response status should be 403
+    And the response json should have "error" = "insufficient_scope"
 
   Scenario: Invalid token should be rejected
     When I GET "/users" with bearer "nope"
