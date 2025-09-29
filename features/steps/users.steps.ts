@@ -3,16 +3,33 @@ import { strict as assert } from 'assert';
 import { TestWorld } from './world';
 import { UserService } from '../../src/services/UserService';
 
-Given('I have a valid access token', async function (this: TestWorld) {
-  await this.inject({
+async function obtainClientToken(world: TestWorld, scope = 'user') {
+  const params = new URLSearchParams({
+    grant_type: 'client_credentials',
+    client_id: 'my-client',
+    client_secret: 'supersecret',
+  });
+  if (scope !== undefined) {
+    params.set('scope', scope);
+  }
+
+  await world.inject({
     method: 'POST',
     url: '/oauth/tokens',
     headers: { 'content-type': 'application/x-www-form-urlencoded' },
-    payload: 'grant_type=client_credentials&client_id=my-client&client_secret=supersecret&scope=read:users',
+    payload: params.toString(),
   });
-  const body = this.res.json();
-  this.token = body.access_token;
-  assert.ok(this.token, 'Expected access_token');
+  const body = world.res.json();
+  world.token = body.access_token;
+  assert.ok(world.token, 'Expected access_token');
+}
+
+Given('I have a valid access token', async function (this: TestWorld) {
+  await obtainClientToken(this, 'user');
+});
+
+Given('I have an access token with scope {string}', async function (this: TestWorld, scope: string) {
+  await obtainClientToken(this, scope);
 });
 
 When('I GET {string}', async function (this: TestWorld, path: string) {

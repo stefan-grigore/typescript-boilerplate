@@ -4,17 +4,21 @@ import { UserSchema, CreateUserSchema } from '../models/User';
 import { ApiError, ErrorResponseSchema } from '../models/ApiError';
 import { UserService } from '../services/UserService';
 
-export async function registerUserRoutes(app: FastifyInstance, requireAuth: (req: any, reply: any) => Promise<any>) {
+export async function registerUserRoutes(
+  app: FastifyInstance,
+  requireAuth: (scope?: string) => (req: any, reply: any) => Promise<any>
+) {
   app.route({
     method: 'GET',
     url: '/users',
-    preHandler: requireAuth,
+    preHandler: requireAuth('user'),
     schema: {
       tags: ['users'],
-      security: [{ bearer: [] }, { oauth2: ['read:users'] }],
+      security: [{ bearer: [] }, { oauth2: ['user'] }],
       response: {
         200: UserSchema.array(),
         401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
       },
       summary: 'List users',
     },
@@ -24,15 +28,16 @@ export async function registerUserRoutes(app: FastifyInstance, requireAuth: (req
   app.route({
     method: 'GET',
     url: '/users/:id',
-    preHandler: requireAuth,
+    preHandler: requireAuth('user'),
     schema: {
       tags: ['users'],
-      security: [{ bearer: [] }, { oauth2: ['read:users'] }],
+      security: [{ bearer: [] }, { oauth2: ['user'] }],
       params: z.object({ id: z.string() }),
       response: {
         200: UserSchema,
         401: ErrorResponseSchema,
         404: ErrorResponseSchema,
+        403: ErrorResponseSchema,
       },
       summary: 'Get one user',
     },
@@ -49,15 +54,16 @@ export async function registerUserRoutes(app: FastifyInstance, requireAuth: (req
   app.route({
     method: 'POST',
     url: '/users',
-    preHandler: requireAuth,
+    preHandler: requireAuth('user'),
     schema: {
       tags: ['users'],
-      security: [{ bearer: [] }, { oauth2: ['write:users'] }],
+      security: [{ bearer: [] }, { oauth2: ['user'] }],
       body: CreateUserSchema,
       response: {
         200: UserSchema,
         400: ErrorResponseSchema,
         401: ErrorResponseSchema,
+        403: ErrorResponseSchema,
       },
       summary: 'Create user',
     },
